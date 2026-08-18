@@ -5,7 +5,7 @@ Fit a video into a token budget for multimodal LLMs.
 You say how many tokens you are willing to spend. It picks the frames that say
 the most about the video, and tells you what it saved.
 
-![Same video, half the tokens: 51 frames at 1 fps against 27 chosen by framebudget](docs/comparison.png)
+![Same video, half the tokens: 51 frames at 1 fps against 27 chosen by framebudget](https://raw.githubusercontent.com/DeyvidLucas-DEV/framebudget/main/docs/comparison.png)
 
 ```python
 from framebudget import extract
@@ -85,7 +85,7 @@ binary on your PATH. OpenCV brings its own decoders.
 
 ## How it works
 
-![Four stages: scan, deduplicate, segment, allocate, with the counts each one produced on a 50 second screen recording](docs/pipeline.png)
+![Four stages: scan, deduplicate, segment, allocate, with the counts each one produced on a 50 second screen recording](https://raw.githubusercontent.com/DeyvidLucas-DEV/framebudget/main/docs/pipeline.png)
 
 Four stages.
 
