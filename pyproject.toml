@@ -35,6 +35,12 @@ dependencies = [
     "opencv-python-headless>=4.8",
 ]
 
+[project.urls]
+Homepage = "https://github.com/DeyvidLucas-DEV/framebudget"
+Repository = "https://github.com/DeyvidLucas-DEV/framebudget"
+Issues = "https://github.com/DeyvidLucas-DEV/framebudget/issues"
+Changelog = "https://github.com/DeyvidLucas-DEV/framebudget/blob/main/CHANGELOG.md"
+
 [project.optional-dependencies]
 audio = ["faster-whisper>=1.0"]
 dev = [
