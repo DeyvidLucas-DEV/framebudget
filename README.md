@@ -85,6 +85,8 @@ binary on your PATH. OpenCV brings its own decoders.
 
 ## How it works
 
+![Four stages: scan, deduplicate, segment, allocate, with the counts each one produced on a 50 second screen recording](docs/pipeline.png)
+
 Four stages.
 
 **Scan.** Walk the file once and describe each sample with a brightness
