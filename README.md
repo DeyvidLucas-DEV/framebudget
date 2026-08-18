@@ -209,7 +209,10 @@ Worth knowing before you file an issue.
   different text on screen can be deduplicated. Lower `min_distance` for slides
   and documents.
 - Token counts are estimates. Providers round internally and change encodings.
-  Use them to plan, then check a real invoice.
+  Use them to plan, then check a real invoice. The OpenAI blocks pin
+  `detail: "high"` so the estimate and the bill describe the same request; left
+  on `auto` the API silently picks a cheaper path on small frames and the two
+  stop matching.
 - Savings depend on the material, and can be negative. On a 50 second screen
   recording it cut 46 percent. On an 18 second promo cutting every second it
   spends more than 1 fps would, because 1 fps genuinely misses most of that

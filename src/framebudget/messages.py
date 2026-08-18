@@ -57,7 +57,15 @@ def _claude_blocks(frame: Frame) -> dict[str, Any]:
 def _openai_blocks(frame: Frame) -> dict[str, Any]:
     return {
         "type": "image_url",
-        "image_url": {"url": f"data:image/jpeg;base64,{frame.as_base64()}"},
+        "image_url": {
+            "url": f"data:image/jpeg;base64,{frame.as_base64()}",
+            # Pinned rather than left on "auto". The cost model here prices the
+            # high detail path, and auto quietly picks something cheaper on small
+            # images, so an unpinned request gets billed for one thing while the
+            # report predicted another. Measured on gpt-4.1: 436 tokens per frame
+            # against the 1105 this library estimates.
+            "detail": "high",
+        },
     }
 
 
