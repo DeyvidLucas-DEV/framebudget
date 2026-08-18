@@ -6,6 +6,9 @@ on:
   pull_request:
 
 jobs:
+  # Tests run everywhere, because behaviour has to hold on every supported
+  # version. Lint and types run once: mypy against four different numpy stub
+  # releases reports differences in the stubs, not in this code.
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -19,7 +22,17 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
       - run: pip install -e ".[dev]"
+      - run: pytest -q
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -e ".[dev]"
       - run: ruff format --check .
       - run: ruff check .
       - run: mypy src/framebudget
-      - run: pytest -q

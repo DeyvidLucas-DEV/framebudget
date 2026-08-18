@@ -9,7 +9,7 @@ apart from "the encoder noise changed".
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 import cv2
 import numpy as np
@@ -111,7 +111,9 @@ def _structure(frame: npt.NDArray[Any]) -> npt.NDArray[np.float32]:
     small = cv2.resize(grey, (_THUMB, _THUMB), interpolation=cv2.INTER_AREA)
     small = small.astype(np.float32)
     normalised = (small - small.mean()) / (small.std() + _FLAT_GUARD)
-    return normalised.flatten().astype(np.float32)
+    # cast because the numpy stubs widen astype to Any on older releases,
+    # and CI runs a spread of them.
+    return cast(npt.NDArray[np.float32], normalised.flatten().astype(np.float32))
 
 
 def _colour_histogram(frame: npt.NDArray[Any]) -> npt.NDArray[np.float32]:

@@ -8,6 +8,7 @@ from typing import Any
 
 import cv2
 import numpy as np
+import numpy.typing as npt
 
 from .errors import BudgetTooSmallError, UnreadableVideoError
 from .frame import Frame
@@ -131,7 +132,9 @@ def extract(
     return Result(frames=frames, report=report, target=resolved)
 
 
-def _decode(path: Path, wanted: np.ndarray, size: tuple[int, int]) -> dict[int, bytes]:
+def _decode(
+    path: Path, wanted: npt.NDArray[np.int64], size: tuple[int, int]
+) -> dict[int, bytes]:
     """Second pass over the file, decoding only the frames that were chosen.
 
     Sequential grab is faster and far more reliable than seeking. Seeking on a
@@ -161,7 +164,7 @@ def _decode(path: Path, wanted: np.ndarray, size: tuple[int, int]) -> dict[int, 
     return encoded
 
 
-def _encode(frame: np.ndarray, size: tuple[int, int]) -> bytes:
+def _encode(frame: npt.NDArray[Any], size: tuple[int, int]) -> bytes:
     width, height = size
     if (frame.shape[1], frame.shape[0]) != size:
         frame = cv2.resize(frame, (width, height), interpolation=cv2.INTER_AREA)
