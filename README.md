@@ -5,6 +5,8 @@ Fit a video into a token budget for multimodal LLMs.
 You say how many tokens you are willing to spend. It picks the frames that say
 the most about the video, and tells you what it saved.
 
+![Same video, half the tokens: 51 frames at 1 fps against 27 chosen by framebudget](docs/comparison.png)
+
 ```python
 from framebudget import extract
 
