@@ -73,3 +73,31 @@ def motion_video(tmp_path_factory: pytest.TempPathFactory) -> Path:
         writer.write(frame)
     writer.release()
     return path
+
+
+@pytest.fixture(scope="session")
+def fast_cut_video(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """Eight shots in four seconds, cutting twice a second.
+
+    Modelled on real edited footage. At 2 samples per second every sample lands
+    in a different shot, so nothing can be told apart from anything else and the
+    scene detector needs a higher rate to see the cuts at all.
+    """
+    path = tmp_path_factory.mktemp("videos") / "fastcuts.mp4"
+    writer = _writer(path)
+    palette = [
+        (200, 60, 40),
+        (40, 180, 70),
+        (40, 40, 210),
+        (180, 180, 40),
+        (200, 40, 190),
+        (60, 200, 200),
+        (120, 40, 90),
+        (30, 120, 200),
+    ]
+    for marker, colour in enumerate(palette, start=1):
+        base = _panel(colour, (marker % 4) + 1)
+        for _ in range(FPS // 2):
+            writer.write(base)
+    writer.release()
+    return path

@@ -53,3 +53,21 @@ def test_continuous_motion_is_sampled_across_the_whole_shot(
     # Farthest point sampling should reach the end of the pan, not cluster at the
     # start where the seed frame sits.
     assert int(chosen.max()) > len(result) * 0.6
+
+
+def test_budget_is_a_ceiling_not_a_target(cut_video: Path) -> None:
+    result = scan(probe(cut_video), analysis_fps=2.0)
+    # Budget far beyond anything the video justifies. Spending all of it on four
+    # static shots would be the waste this library exists to remove.
+    selection = select(result, budget_frames=10_000)
+    assert len(selection.chosen) <= len(selection.scenes) * 3
+
+
+def test_fast_cuts_are_all_covered(fast_cut_video: Path) -> None:
+    from framebudget.signals import auto_scan
+
+    result = auto_scan(probe(fast_cut_video))
+    selection = select(result, budget_frames=100)
+    # Eight distinct shots in four seconds. Finding only one or two means the
+    # scene detector collapsed, which is what happened before auto rate.
+    assert len(selection.scenes) >= 6

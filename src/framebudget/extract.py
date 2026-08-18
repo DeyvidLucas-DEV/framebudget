@@ -16,7 +16,7 @@ from .messages import build_messages
 from .probe import probe
 from .report import Report
 from .selection import select
-from .signals import scan
+from .signals import Scan, auto_scan
 from .targets import Target, fit_within, resolve_target
 
 __all__ = ["Frame", "Result", "extract"]
@@ -47,7 +47,7 @@ def extract(
     path: str | Path,
     budget: int = 50_000,
     target: str | Target = "claude",
-    analysis_fps: float = 2.0,
+    analysis_fps: float | None = None,
     min_distance: float = 0.02,
     sensitivity: float = 4.0,
     max_dimension: int | None = None,
@@ -58,8 +58,9 @@ def extract(
         path: video file to read.
         budget: token ceiling for the images. Text and prompt are not counted.
         target: ``"claude"``, ``"openai"``, ``"gemini"`` or a custom ``Target``.
-        analysis_fps: how densely to look at the video while deciding. Higher
-            catches shorter events and costs more wall clock, nothing else.
+        analysis_fps: how densely to look at the video while deciding. Left
+            unset it picks the rate itself, raising it while the video changes
+            faster than it is being sampled. Pass a number to pin it.
         min_distance: redundancy floor in [0, 1]. Below this two frames are the
             same picture and the second is never worth paying for. Fitting the
             budget is the allocator's job, not this one.
@@ -90,7 +91,7 @@ def extract(
         )
 
     budget_frames = budget // per_frame
-    scan_result = scan(info, analysis_fps=analysis_fps)
+    scan_result = auto_scan(info, analysis_fps)
     selection = select(
         scan_result,
         budget_frames=budget_frames,
@@ -120,7 +121,7 @@ def extract(
     baseline_frames = max(1, int(info.duration)) if info.duration else len(frames)
     report = Report(
         duration=info.duration,
-        analysis_fps=analysis_fps,
+        analysis_fps=_rate_of(scan_result),
         scanned=selection.scanned,
         unique=int(selection.kept_after_dedup.size),
         scenes=len(selection.scenes),
@@ -130,6 +131,16 @@ def extract(
         baseline_tokens=baseline_frames * per_frame,
     )
     return Result(frames=frames, report=report, target=resolved)
+
+
+def _rate_of(scan_result: Scan) -> float:
+    """Recover the sample rate actually used, for the report."""
+    if len(scan_result) < 2:
+        return 0.0
+    step = float(scan_result.timestamps[1] - scan_result.timestamps[0])
+    # Rounded because the step comes from frame indices over a possibly fractional
+    # frame rate, and 1.96587 in a report reads as a bug rather than as 2.
+    return round(1.0 / step, 1) if step > 0 else 0.0
 
 
 def _decode(

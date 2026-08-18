@@ -85,10 +85,17 @@ binary on your PATH. OpenCV brings its own decoders.
 
 Four stages.
 
-**Scan.** Walk the file once at a low sample rate and describe each sample with
-a brightness normalised thumbnail and a colour histogram. Frames in between are
-advanced without decoding, so scanning an hour of video does not cost an hour of
-decoding.
+**Scan.** Walk the file once and describe each sample with a brightness
+normalised thumbnail and a colour histogram. Frames in between are advanced
+without decoding, so scanning an hour of video does not cost an hour of decoding.
+
+The sample rate is measured, not guessed. Sample a fast cutting video at 2 fps
+and consecutive samples share nothing, so every one of them reads as a cut and
+scene detection collapses. On a real estate tour that cuts every second, 2 fps
+found 1 scene where there were 16; raising the rate to 8 found 15. So the scan
+starts at 2 fps and doubles while the typical step between samples stays large.
+Asking the user to pick this number would be the same guess the library exists
+to remove.
 
 The thumbnail is normalised for a reason. The obvious descriptor here is a
 difference hash, and it falls apart on exactly the footage this library targets.
@@ -117,6 +124,11 @@ those two badly wrong.
 cost model, split it across scenes by weight, then pick frames inside each scene
 by farthest point sampling. Even spacing in time gives you whatever was on
 screen at fixed intervals. Spacing by appearance gives you distinct content.
+
+The budget is a ceiling, not a target. Asking for 50k tokens does not mean
+spending 50k on eighteen seconds of video, so the frame count is also capped by
+what the video holds, at roughly three frames per scene. You get told what was
+spent against what was allowed.
 
 ## Targets
 
@@ -171,12 +183,18 @@ tokens, nothing missed. It is a real result, not a failure.
 
 ## Tuning
 
-| Option          | Default | Effect                                              |
-| --------------- | ------- | --------------------------------------------------- |
-| `analysis_fps`  | 2.0     | raise to catch shorter events, costs only wall clock |
-| `min_distance`  | 0.02    | redundancy floor, raise on noisy footage             |
-| `sensitivity`   | 4.0     | times above the scene baseline to count as a cut     |
-| `max_dimension` | target  | lower to buy more frames with the same tokens        |
+| Option          | Default   | Effect                                          |
+| --------------- | --------- | ----------------------------------------------- |
+| `analysis_fps`  | automatic | pin it only to override the measured rate       |
+| `min_distance`  | 0.02      | redundancy floor, raise on noisy footage        |
+| `sensitivity`   | 4.0       | times above the scene baseline to count as a cut |
+| `max_dimension` | target    | lower to buy more frames with the same tokens   |
+
+`min_distance` is deliberately conservative, and it cannot be tuned once for
+everything. Slides differ from each other by a line of text, photographs differ
+by the whole frame. Raising the floor to 0.2 works well on camera footage and
+collapses a slide deck from 34 distinct frames to 2. If your material is text
+heavy, leave it low.
 
 ## Limits
 
@@ -192,9 +210,11 @@ Worth knowing before you file an issue.
   and documents.
 - Token counts are estimates. Providers round internally and change encodings.
   Use them to plan, then check a real invoice.
-- Tested against synthetic footage with known cut positions. That validates the
-  logic, not the calibration on real material. Try it on your own video before
-  trusting the scene counts.
+- Savings depend on the material, and can be negative. On a 50 second screen
+  recording it cut 46 percent. On an 18 second promo cutting every second it
+  spends more than 1 fps would, because 1 fps genuinely misses most of that
+  video. It optimises where the budget goes, which is not the same as always
+  spending less.
 
 ## License
 

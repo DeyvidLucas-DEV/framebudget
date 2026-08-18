@@ -22,8 +22,15 @@ _BASELINE_WINDOW = 21
 
 # A scene needs at least this many samples before it is allowed to be cut again.
 # Without it the first samples after a cut are compared against an empty history
-# and every one of them looks like a jump.
-_MIN_SCENE = 3
+# and every one of them looks like a jump. Two, not three: on quickly cut footage
+# a whole scene can be two samples long, and three made those invisible.
+_MIN_SCENE = 2
+
+# The running level is a low percentile, not the median. On footage that cuts
+# every second the history fills up with the cuts themselves, and a median sits
+# high enough to hide the next one. A low percentile tracks how the scene behaves
+# when it is not cutting, which is the thing a cut has to stand out against.
+_BASELINE_PERCENTILE = 25
 
 
 @dataclass(frozen=True)
@@ -90,7 +97,9 @@ def _find_cuts(novelty: npt.NDArray[np.float64], sensitivity: float) -> list[int
     for index in range(1, count):
         value = float(novelty[index])
         if len(history) >= _MIN_SCENE:
-            baseline = float(np.median(history[-_BASELINE_WINDOW:]))
+            baseline = float(
+                np.percentile(history[-_BASELINE_WINDOW:], _BASELINE_PERCENTILE)
+            )
             if value >= max(baseline * sensitivity, _NOISE_FLOOR):
                 boundaries.append(index)
                 history = []

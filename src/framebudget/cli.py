@@ -44,8 +44,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--analysis-fps",
         type=float,
-        default=2.0,
-        help="samples per second while deciding (default: 2.0)",
+        help="pin samples per second while deciding (default: chosen automatically)",
     )
     parser.add_argument(
         "--min-distance",

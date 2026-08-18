@@ -23,6 +23,17 @@ __all__ = ["Scan", "distances_to", "scan"]
 _THUMB = 16
 _HIST_BINS = 32
 
+# Sampling rates for the automatic mode. Two per second is plenty for a talk or a
+# screencast; footage that cuts every second needs four times that before the
+# cuts stop blurring into each other.
+_START_FPS = 2.0
+_MAX_FPS = 8.0
+
+# If the typical distance between neighbouring samples is above this, the video
+# is changing faster than we are looking at it. Everything then looks like a cut,
+# and nothing can be told apart from anything else.
+_UNDERSAMPLED = 0.08
+
 # Added to the standard deviation before normalising. On a flat wall or a blank
 # slide the real deviation is almost zero, and dividing by it would amplify
 # sensor noise into a completely different descriptor every frame. This is the
@@ -169,3 +180,24 @@ def distances_to(
         / 2.0
     )
     return _combine(structural, chromatic)
+
+
+def auto_scan(info: VideoInfo, analysis_fps: float | None = None) -> Scan:
+    """Scan, raising the sample rate while the video outruns it.
+
+    Picking this by hand is the same guess the library exists to remove. Sample a
+    fast cutting video at 2 fps and consecutive samples share nothing, so every
+    one of them reads as a cut and scene detection collapses. Measure it instead:
+    if the typical step is large, look more often.
+    """
+    if analysis_fps is not None:
+        return scan(info, analysis_fps)
+
+    fps = _START_FPS
+    result = scan(info, fps)
+    while fps < _MAX_FPS:
+        if len(result) < 3 or float(np.median(result.novelty[1:])) <= _UNDERSAMPLED:
+            break
+        fps = min(fps * 2, _MAX_FPS)
+        result = scan(info, fps)
+    return result

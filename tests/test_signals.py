@@ -53,3 +53,29 @@ def test_distances_match_the_novelty_signal(cut_video: Path) -> None:
     result = scan(probe(cut_video), analysis_fps=2.0)
     direct = distances_to(result, 0, np.asarray([1]))[0]
     assert direct == float(result.novelty[1])
+
+
+def test_auto_scan_leaves_calm_footage_at_the_base_rate(static_video: Path) -> None:
+    from framebudget.signals import auto_scan
+
+    result = auto_scan(probe(static_video))
+    step = float(result.timestamps[1] - result.timestamps[0])
+    assert round(1.0 / step) == 2
+
+
+def test_auto_scan_speeds_up_when_the_video_outruns_it(fast_cut_video: Path) -> None:
+    from framebudget.signals import auto_scan
+
+    # Cuts every half second. Sampled at 2 fps every sample looks like a cut and
+    # scene detection has nothing to grip, so the rate has to come up.
+    result = auto_scan(probe(fast_cut_video))
+    step = float(result.timestamps[1] - result.timestamps[0])
+    assert round(1.0 / step) > 2
+
+
+def test_pinned_rate_is_respected(fast_cut_video: Path) -> None:
+    from framebudget.signals import auto_scan
+
+    result = auto_scan(probe(fast_cut_video), analysis_fps=2.0)
+    step = float(result.timestamps[1] - result.timestamps[0])
+    assert round(1.0 / step) == 2

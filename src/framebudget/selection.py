@@ -21,6 +21,12 @@ from .signals import Scan, distances_to
 
 __all__ = ["Selection", "select"]
 
+# Frames per scene when nothing forces otherwise. The budget is a ceiling, not a
+# target: asking for 50k tokens should not mean spending 50k on eighteen seconds
+# of video. Past roughly this many frames of one scene the model is looking at
+# the same room from almost the same angle, and paying for it.
+_FRAMES_PER_SCENE = 3
+
 
 @dataclass(frozen=True)
 class Selection:
@@ -50,6 +56,10 @@ def select(
     # would hide the very thing we are looking for.
     scene_list = segment(scan_result.novelty, sensitivity)
     kept = _deduplicate(scan_result, min_distance)
+
+    # Whichever runs out first: what the user will pay for, or what the video
+    # actually holds.
+    budget_frames = min(budget_frames, max(1, len(scene_list) * _FRAMES_PER_SCENE))
 
     if kept.size <= budget_frames:
         return Selection(
