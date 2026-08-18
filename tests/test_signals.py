@@ -21,12 +21,21 @@ def test_novelty_is_bounded(cut_video: Path) -> None:
     assert result.novelty.max() <= 1.0
 
 
-def test_static_footage_produces_near_zero_novelty(static_video: Path) -> None:
+def test_static_footage_produces_near_zero_novelty(
+    static_video: Path, cut_video: Path
+) -> None:
     # This is the regression that matters. A difference hash compares nearly
     # equal cells on flat footage and flips half its bits on noise alone, which
-    # reads as constant change where there is none.
-    result = scan(probe(static_video), analysis_fps=2.0)
-    assert float(np.median(result.novelty[1:])) < 0.01
+    # reads as constant change where there is none. It scored 0.17 here.
+    #
+    # Asserted against real change rather than a fixed number on purpose. How
+    # much noise survives encoding depends on the OpenCV build, so an absolute
+    # threshold passes on one machine and fails on CI while the code is fine.
+    still = float(np.median(scan(probe(static_video), 2.0).novelty[1:]))
+    changing = float(scan(probe(cut_video), 2.0).novelty[1:].max())
+
+    assert still < 0.05
+    assert still * 10 < changing
 
 
 def test_cuts_stand_out_against_their_neighbours(cut_video: Path) -> None:
