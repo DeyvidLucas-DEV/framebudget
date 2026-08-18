@@ -41,3 +41,17 @@ def test_fit_within_never_scales_up() -> None:
 def test_fit_within_keeps_aspect_ratio() -> None:
     width, height = fit_within(4000, 2000, 1000)
     assert (width, height) == (1000, 500)
+
+
+def test_openai_does_not_upscale_small_frames() -> None:
+    openai = TARGETS["openai"]
+    # Measured against the API: a 854x480 frame bills around 425 tokens. Scaling
+    # its short edge up to 768 before tiling predicted 1105, which is what this
+    # library reported for months of nothing but synthetic tests.
+    assert openai.tokens_for(854, 480) == 425
+
+
+def test_openai_downscales_large_frames() -> None:
+    openai = TARGETS["openai"]
+    # Same frame count either way once the short edge is above the limit.
+    assert openai.tokens_for(1280, 682) == openai.tokens_for(2560, 1364)

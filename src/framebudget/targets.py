@@ -39,11 +39,12 @@ class _OpenAITarget(Target):
 
     def tokens_for(self, width: int, height: int) -> int:
         w, h = fit_within(width, height, self.max_dimension)
-        # The short edge gets rescaled to a fixed size before tiling. Side effect:
-        # a wide frame and a tall frame with the same area can cost different
-        # amounts.
-        scale = self.short_edge / min(w, h)
-        w, h = round(w * scale), round(h * scale)
+        # The short edge is brought down to 768 before tiling, and only down.
+        # Scaling up a small frame here was costing 1105 tokens on a 854x480
+        # frame that the API actually bills at roughly 425.
+        if min(w, h) > self.short_edge:
+            scale = self.short_edge / min(w, h)
+            w, h = round(w * scale), round(h * scale)
         tiles = math.ceil(w / 512) * math.ceil(h / 512)
         return self.base_tokens + self.tile_tokens * tiles
 
